@@ -285,31 +285,33 @@ async function insertSampleLessons() {
         }
         
         for (const lesson of sampleMathLessons) {
-            // Insert lesson with proper subject_id reference
+            // Insert lesson WITHOUT specifying ID (let database generate UUID)
             const { data: lessonData, error: lessonError } = await supabase
                 .from('lessons')
-                .upsert([{
-                    id: lesson.id,
+                .insert([{
                     title: lesson.title,
                     description: lesson.description,
-                    subject_id: mathSubject.id, // Use subject_id instead of subject
+                    subject_id: mathSubject.id,
                     topic: lesson.topic,
                     difficulty_level: lesson.difficulty_level,
                     required_level: lesson.required_level,
                     estimated_duration: lesson.estimated_duration,
-                    lesson_data: { time_limit: lesson.time_limit }, // Store time_limit in lesson_data JSON
+                    lesson_data: { time_limit: lesson.time_limit },
                     is_active: lesson.is_active
                 }])
-                .select();
+                .select()
+                .single();
             
             if (lessonError) {
-                console.error(`Error inserting lesson ${lesson.id}:`, lessonError);
+                console.error(`Error inserting lesson ${lesson.title}:`, lessonError);
                 continue;
             }
             
-            // Insert questions for this lesson
+            console.log(`📚 Created lesson ${lesson.title} with ID: ${lessonData.id}`);
+            
+            // Insert questions for this lesson using the generated lesson ID
             const questions = lesson.questions.map((q, index) => ({
-                lesson_id: lesson.id,
+                lesson_id: lessonData.id, // Use the actual database-generated ID
                 question_order: index + 1,
                 question: q.question,
                 type: q.type,
@@ -320,14 +322,16 @@ async function insertSampleLessons() {
                 hint: q.hint
             }));
             
+            console.log(`📝 Inserting ${questions.length} questions for lesson ${lesson.title}`);
+            
             const { error: questionsError } = await supabase
                 .from('lesson_questions')
-                .upsert(questions);
+                .insert(questions);
             
             if (questionsError) {
-                console.error(`Error inserting questions for lesson ${lesson.id}:`, questionsError);
+                console.error(`Error inserting questions for lesson ${lesson.title}:`, questionsError);
             } else {
-                console.log(`✅ Inserted lesson: ${lesson.title}`);
+                console.log(`✅ Inserted ${questions.length} questions for lesson: ${lesson.title}`);
             }
         }
         
@@ -524,9 +528,33 @@ async function insertSampleSubjects() {
     }
 }
 
+// Function to clear existing lessons and questions
+async function clearExistingData() {
+    const supabase = window.supabaseClient;
+    if (!supabase) return;
+    
+    try {
+        console.log('🗑️ Clearing existing lesson data...');
+        
+        // Delete existing questions first (due to foreign key constraint)
+        await supabase.from('lesson_questions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        // Delete existing lessons
+        await supabase.from('lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        console.log('✅ Cleared existing data');
+        
+    } catch (error) {
+        console.error('Error clearing data:', error);
+    }
+}
+
 // Function to setup all sample data
 async function setupSampleData() {
     console.log('🔧 Setting up sample data for habbitZ...');
+    
+    // Clear existing data first
+    await clearExistingData();
     
     const results = await Promise.all([
         insertSampleSubjects(),
