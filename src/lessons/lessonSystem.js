@@ -265,23 +265,36 @@ class MathLesson {
         }
         
         try {
-            const { data, error } = await window.supabase
+            // Load lesson data
+            const { data: lessonData, error: lessonError } = await window.supabase
                 .from('lessons')
-                .select(`
-                    *,
-                    questions:lesson_questions(*)
-                `)
+                .select('*')
                 .eq('id', lessonId)
                 .eq('is_active', true)
                 .single();
                 
-            if (error) throw error;
+            if (lessonError) throw lessonError;
             
-            if (!data) {
+            if (!lessonData) {
                 throw new Error('Lesson not found');
             }
             
-            return new MathLesson(data);
+            // Load questions separately
+            const { data: questionsData, error: questionsError } = await window.supabase
+                .from('lesson_questions')
+                .select('*')
+                .eq('lesson_id', lessonId)
+                .order('question_order');
+                
+            if (questionsError) throw questionsError;
+            
+            // Combine lesson and questions
+            const lesson = {
+                ...lessonData,
+                questions: questionsData || []
+            };
+            
+            return new MathLesson(lesson);
             
         } catch (error) {
             console.error('Error loading lesson:', error);

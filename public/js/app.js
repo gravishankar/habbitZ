@@ -767,19 +767,11 @@ async function startLesson(lessonId) {
     }
     
     try {
-        if (!window.lessonManager) {
-            showAlert('Lesson system not initialized. Please refresh the page.', 'error');
-            return;
-        }
-        
         // Close any open modals
         closeLessonsModal();
         
-        // Start the lesson
-        const lessonData = await window.lessonManager.startLesson(lessonId, currentUser.id);
-        
-        // Show lesson interface
-        showLessonInterface(lessonData);
+        // Navigate to lesson page
+        window.location.href = `lesson.html?id=${lessonId}`;
         
     } catch (error) {
         console.error('Error starting lesson:', error);
@@ -793,19 +785,6 @@ function showGuestLessonPreview(lessonId) {
         closeLessonsModal();
         showAuth();
     }, 2000);
-}
-
-function showLessonInterface(lessonData) {
-    // This would open a full lesson interface
-    // For now, just show a success message
-    showAlert(`Lesson started: ${lessonData.totalQuestions} questions to complete!`, 'success');
-    console.log('Lesson data:', lessonData);
-    
-    // TODO: Implement full lesson interface
-    // For now, redirect back to dashboard after a moment
-    setTimeout(() => {
-        showAlert('Lesson interface coming soon! Check your progress on the dashboard.', 'info');
-    }, 3000);
 }
 
 // Utility Functions

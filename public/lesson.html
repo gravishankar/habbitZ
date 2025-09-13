@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson - habbitZ</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/supabase.min.js"></script>
+    <style>
+        .lesson-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .lesson-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .lesson-progress {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .progress-bar {
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 8px;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            background: #4f46e5;
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .question-container {
+            background: #fafbfc;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+        }
+        
+        .answer-options {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .answer-option {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .answer-option:hover {
+            border-color: #4f46e5;
+            background: #f8faff;
+        }
+        
+        .answer-option.selected {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+        
+        .answer-option.correct {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+        
+        .answer-option.incorrect {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        .question-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .feedback-container {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .feedback-container.correct {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        
+        .feedback-container.incorrect {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+        
+        .lesson-complete {
+            text-align: center;
+            background: #d1fae5;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .score-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #10b981;
+            margin: 1rem 0;
+        }
+        
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .hint-container {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .lesson-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="lesson-container">
+        <!-- Lesson Header -->
+        <div class="lesson-header">
+            <h1 id="lesson-title">Loading Lesson...</h1>
+            <p id="lesson-description"></p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="lesson-progress">
+            <div class="lesson-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="current-question">1</div>
+                    <div class="stat-label">Question</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="total-questions">5</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="current-score">0</div>
+                    <div class="stat-label">Points</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="time-spent">0</div>
+                    <div class="stat-label">Seconds</div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Question Container -->
+        <div id="question-container" class="question-container">
+            <div class="question-text" id="question-text">Loading question...</div>
+            
+            <div class="answer-options" id="answer-options">
+                <!-- Options will be populated by JavaScript -->
+            </div>
+            
+            <div class="hint-container" id="hint-container">
+                <strong>💡 Hint:</strong> <span id="hint-text"></span>
+            </div>
+            
+            <div class="feedback-container" id="feedback-container">
+                <div id="feedback-text"></div>
+            </div>
+            
+            <div class="question-actions">
+                <button class="btn-secondary" onclick="showHint()">Show Hint</button>
+                <button class="btn-primary" id="submit-btn" onclick="submitAnswer()" disabled>Submit Answer</button>
+                <button class="btn-primary" id="next-btn" onclick="nextQuestion()" style="display: none;">Next Question</button>
+            </div>
+        </div>
+        
+        <!-- Lesson Complete -->
+        <div id="lesson-complete" class="lesson-complete" style="display: none;">
+            <h2>🎉 Lesson Complete!</h2>
+            <div class="score-display" id="final-score">85%</div>
+            <div class="lesson-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="final-correct">4</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="final-total">5</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="final-points">40</div>
+                    <div class="stat-label">Points</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="final-time">2:34</div>
+                    <div class="stat-label">Time</div>
+                </div>
+            </div>
+            <div style="margin-top: 2rem;">
+                <button class="btn-primary" onclick="returnToDashboard()">Return to Dashboard</button>
+                <button class="btn-secondary" onclick="viewProgress()">View Progress</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../src/utils/contentProtection.js"></script>
+    <script src="../src/utils/analytics.js"></script>
+    <script src="../src/lessons/lessonSystem.js"></script>
+    <script src="../src/components/progressDashboard.js"></script>
+    <script src="../src/components/achievementSystem.js"></script>
+    <script src="../src/lessons/sampleLessons.js"></script>
+    
+    <script>
+        // Lesson Interface JavaScript
+        const SUPABASE_URL = 'https://wpkemkvgsbmudzgjrdqd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwa2Vta3Znc2JtdWR6Z2pyZHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MDAzOTMsImV4cCI6MjA3MzI3NjM5M30.LCDGRUL7AMCuoxTwrI8SbKu8wwFNLXb_kfm7mwdzYHQ';
+        
+        let supabase;
+        let currentUser = null;
+        let currentLesson = null;
+        let currentQuestion = null;
+        let selectedAnswer = null;
+        let startTime = Date.now();
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            // Check authentication
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                alert('Please sign in to take lessons');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            currentUser = session.user;
+            
+            // Get lesson ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const lessonId = urlParams.get('id');
+            
+            if (!lessonId) {
+                alert('No lesson specified');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Initialize lesson manager and start lesson
+            if (window.initializeLessonManager) {
+                window.lessonManager = window.initializeLessonManager();
+                await startLesson(lessonId);
+            } else {
+                alert('Lesson system not loaded. Please refresh.');
+            }
+        });
+        
+        async function startLesson(lessonId) {
+            try {
+                const lessonData = await window.lessonManager.startLesson(lessonId, currentUser.id);
+                currentLesson = window.lessonManager.getCurrentLesson();
+                
+                // Update UI
+                document.getElementById('lesson-title').textContent = currentLesson.title;
+                document.getElementById('lesson-description').textContent = currentLesson.description;
+                document.getElementById('total-questions').textContent = lessonData.totalQuestions;
+                
+                // Show first question
+                showCurrentQuestion();
+                
+                // Start timer
+                startTime = Date.now();
+                setInterval(updateTimer, 1000);
+                
+            } catch (error) {
+                console.error('Error starting lesson:', error);
+                alert('Error starting lesson: ' + error.message);
+            }
+        }
+        
+        function showCurrentQuestion() {
+            currentQuestion = currentLesson.getCurrentQuestion();
+            
+            if (!currentQuestion) {
+                // Lesson complete
+                completeLessonUI();
+                return;
+            }
+            
+            // Update question display
+            document.getElementById('question-text').textContent = currentQuestion.question;
+            document.getElementById('current-question').textContent = currentQuestion.index + 1;
+            document.getElementById('hint-text').textContent = currentQuestion.hint || 'No hint available';
+            
+            // Update progress
+            const progress = ((currentQuestion.index) / currentQuestion.totalQuestions) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            
+            // Show answer options
+            showAnswerOptions();
+            
+            // Reset UI state
+            selectedAnswer = null;
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('feedback-container').style.display = 'none';
+            document.getElementById('hint-container').style.display = 'none';
+        }
+        
+        function showAnswerOptions() {
+            const container = document.getElementById('answer-options');
+            container.innerHTML = '';
+            
+            if (currentQuestion.type === 'multiple_choice' && currentQuestion.options) {
+                currentQuestion.options.forEach((option, index) => {
+                    const optionElement = document.createElement('div');
+                    optionElement.className = 'answer-option';
+                    optionElement.textContent = option;
+                    optionElement.onclick = () => selectAnswer(option, optionElement);
+                    container.appendChild(optionElement);
+                });
+            } else {
+                // For number/text questions
+                const input = document.createElement('input');
+                input.type = currentQuestion.type === 'number' ? 'number' : 'text';
+                input.className = 'answer-input';
+                input.style.cssText = 'width: 100%; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 1rem;';
+                input.placeholder = 'Enter your answer...';
+                input.oninput = () => {
+                    selectedAnswer = input.value;
+                    document.getElementById('submit-btn').disabled = !selectedAnswer;
+                };
+                container.appendChild(input);
+            }
+        }
+        
+        function selectAnswer(answer, element) {
+            selectedAnswer = answer;
+            
+            // Update UI
+            document.querySelectorAll('.answer-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            document.getElementById('submit-btn').disabled = false;
+        }
+        
+        async function submitAnswer() {
+            if (!selectedAnswer) return;
+            
+            try {
+                const result = await currentLesson.submitAnswer(currentQuestion.index, selectedAnswer);
+                
+                // Update score
+                document.getElementById('current-score').textContent = result.currentScore;
+                
+                // Show feedback
+                const feedbackContainer = document.getElementById('feedback-container');
+                const feedbackText = document.getElementById('feedback-text');
+                
+                feedbackContainer.className = 'feedback-container ' + (result.isCorrect ? 'correct' : 'incorrect');
+                feedbackContainer.style.display = 'block';
+                
+                feedbackText.innerHTML = `
+                    <strong>${result.isCorrect ? '✅ Correct!' : '❌ Incorrect'}</strong><br>
+                    ${result.explanation}<br>
+                    <small>Points earned: ${result.points}</small>
+                `;
+                
+                // Update answer options styling
+                if (currentQuestion.options) {
+                    document.querySelectorAll('.answer-option').forEach(opt => {
+                        if (opt.textContent === result.correctAnswer) {
+                            opt.classList.add('correct');
+                        } else if (opt.textContent === selectedAnswer && !result.isCorrect) {
+                            opt.classList.add('incorrect');
+                        }
+                    });
+                }
+                
+                // Show next button
+                document.getElementById('submit-btn').style.display = 'none';
+                document.getElementById('next-btn').style.display = 'inline-block';
+                
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                alert('Error submitting answer: ' + error.message);
+            }
+        }
+        
+        function nextQuestion() {
+            const nextQ = currentLesson.nextQuestion();
+            if (nextQ) {
+                showCurrentQuestion();
+            } else {
+                // Lesson complete
+                completeLessonUI();
+            }
+        }
+        
+        async function completeLessonUI() {
+            try {
+                const result = await currentLesson.completeLesson();
+                
+                // Hide question container
+                document.getElementById('question-container').style.display = 'none';
+                
+                // Show completion screen
+                const completeDiv = document.getElementById('lesson-complete');
+                completeDiv.style.display = 'block';
+                
+                // Update final stats
+                document.getElementById('final-score').textContent = result.scorePercentage + '%';
+                document.getElementById('final-correct').textContent = result.correctAnswers;
+                document.getElementById('final-total').textContent = result.totalQuestions;
+                document.getElementById('final-points').textContent = result.score;
+                document.getElementById('final-time').textContent = formatTime(result.timeSpent);
+                
+                // Show achievement notifications if any
+                // This would be handled by the achievement system
+                
+            } catch (error) {
+                console.error('Error completing lesson:', error);
+                alert('Error completing lesson: ' + error.message);
+            }
+        }
+        
+        function showHint() {
+            document.getElementById('hint-container').style.display = 'block';
+        }
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('time-spent').textContent = elapsed;
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function returnToDashboard() {
+            window.location.href = 'index.html';
+        }
+        
+        function viewProgress() {
+            window.location.href = 'index.html#progress';
+        }
+    </script>
+</body>
+</html>
