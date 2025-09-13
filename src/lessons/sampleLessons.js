@@ -271,20 +271,32 @@ async function insertSampleLessons() {
     try {
         console.log('📚 Inserting sample lessons...');
         
+        // First get the math subject ID
+        const { data: mathSubject, error: subjectError } = await window.supabase
+            .from('subjects')
+            .select('id')
+            .eq('name', 'math')
+            .single();
+            
+        if (subjectError || !mathSubject) {
+            console.error('Math subject not found. Make sure subjects are inserted first.');
+            return false;
+        }
+        
         for (const lesson of sampleMathLessons) {
-            // Insert lesson
+            // Insert lesson with proper subject_id reference
             const { data: lessonData, error: lessonError } = await window.supabase
                 .from('lessons')
                 .upsert([{
                     id: lesson.id,
                     title: lesson.title,
                     description: lesson.description,
-                    subject: lesson.subject,
+                    subject_id: mathSubject.id, // Use subject_id instead of subject
                     topic: lesson.topic,
                     difficulty_level: lesson.difficulty_level,
                     required_level: lesson.required_level,
                     estimated_duration: lesson.estimated_duration,
-                    time_limit: lesson.time_limit,
+                    lesson_data: { time_limit: lesson.time_limit }, // Store time_limit in lesson_data JSON
                     is_active: lesson.is_active
                 }])
                 .select();

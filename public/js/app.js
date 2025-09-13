@@ -531,11 +531,14 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
     if (!supabase) return;
     
     try {
-        // Get lessons for this subject
+        // Get lessons for this subject using proper schema
         const { data: lessons, error } = await supabase
             .from('lessons')
-            .select('*')
-            .eq('subject', subjectName)
+            .select(`
+                *,
+                subjects!inner(name, display_name)
+            `)
+            .eq('subjects.name', subjectName)
             .eq('is_active', true)
             .order('difficulty_level')
             .order('title');
@@ -543,7 +546,7 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
         if (error) throw error;
         
         if (!lessons || lessons.length === 0) {
-            showAlert(`No ${subjectName} lessons available yet.`, 'info');
+            showAlert(`No ${subjectName} lessons available yet. Try clicking "Load Sample Lessons" first.`, 'info');
             return;
         }
         
@@ -552,6 +555,7 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
         
     } catch (error) {
         console.error('Error loading lessons for subject:', error);
+        showAlert(`Database error: ${error.message}. Make sure you've run the database schema setup.`, 'error');
         throw error;
     }
 }
@@ -867,27 +871,59 @@ async function checkDatabase() {
     }
     
     try {
-        const [subjectsResult, lessonsResult, achievementsResult] = await Promise.all([
-            supabase.from('subjects').select('*', { count: 'exact', head: true }),
-            supabase.from('lessons').select('*', { count: 'exact', head: true }),
-            supabase.from('achievements').select('*', { count: 'exact', head: true })
-        ]);
+        console.log('🔍 Checking database structure...');
         
-        const message = `Database Status:
-        • Subjects: ${subjectsResult.count || 0}
-        • Lessons: ${lessonsResult.count || 0}  
-        • Achievements: ${achievementsResult.count || 0}`;
+        // Check if tables exist by trying to query them
+        const checks = [];
         
+        // Check subjects table
+        try {
+            const subjectsResult = await supabase.from('subjects').select('*', { count: 'exact', head: true });
+            checks.push(`✅ Subjects table: ${subjectsResult.count || 0} records`);
+        } catch (error) {
+            checks.push(`❌ Subjects table: ${error.message}`);
+        }
+        
+        // Check lessons table
+        try {
+            const lessonsResult = await supabase.from('lessons').select('*', { count: 'exact', head: true });
+            checks.push(`✅ Lessons table: ${lessonsResult.count || 0} records`);
+        } catch (error) {
+            checks.push(`❌ Lessons table: ${error.message}`);
+        }
+        
+        // Check lesson_questions table
+        try {
+            const questionsResult = await supabase.from('lesson_questions').select('*', { count: 'exact', head: true });
+            checks.push(`✅ Questions table: ${questionsResult.count || 0} records`);
+        } catch (error) {
+            checks.push(`❌ Questions table: ${error.message}`);
+        }
+        
+        // Check achievements table
+        try {
+            const achievementsResult = await supabase.from('achievements').select('*', { count: 'exact', head: true });
+            checks.push(`✅ Achievements table: ${achievementsResult.count || 0} records`);
+        } catch (error) {
+            checks.push(`❌ Achievements table: ${error.message}`);
+        }
+        
+        // Show detailed results
+        const message = `Database Status:\n${checks.join('\n')}`;
         showAlert(message, 'info');
-        console.log('Database counts:', {
-            subjects: subjectsResult.count,
-            lessons: lessonsResult.count,
-            achievements: achievementsResult.count
-        });
+        console.log('Database check results:', checks);
+        
+        // Also try to get sample data from subjects
+        try {
+            const { data: sampleSubjects } = await supabase.from('subjects').select('*').limit(3);
+            console.log('Sample subjects:', sampleSubjects);
+        } catch (error) {
+            console.error('Could not fetch sample subjects:', error);
+        }
         
     } catch (error) {
         console.error('Error checking database:', error);
-        showAlert('Error checking database. Please try again.', 'error');
+        showAlert(`Database check failed: ${error.message}`, 'error');
     }
 }
 
