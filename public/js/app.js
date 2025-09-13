@@ -29,6 +29,9 @@ const lessonBrowser = document.getElementById('lesson-browser');
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 habbitZ app starting...');
     
+    // Initialize systems
+    await initializeSystems();
+    
     // Check authentication state
     await checkAuthState();
     
@@ -52,6 +55,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     console.log('✅ habbitZ app initialized');
 });
+
+// Initialize all systems
+async function initializeSystems() {
+    if (!supabase) return;
+    
+    try {
+        // Check if sample data exists
+        const { data: subjectsCheck } = await supabase
+            .from('subjects')
+            .select('id')
+            .limit(1);
+            
+        if (!subjectsCheck || subjectsCheck.length === 0) {
+            console.log('📚 Loading sample data...');
+            showAlert('Setting up sample lessons...', 'info');
+            
+            // Load sample data
+            if (window.setupSampleData) {
+                await window.setupSampleData();
+            }
+        }
+        
+        // Initialize lesson manager
+        if (window.initializeLessonManager) {
+            window.lessonManager = window.initializeLessonManager();
+        }
+        
+    } catch (error) {
+        console.error('Error initializing systems:', error);
+    }
+}
 
 // Authentication Functions
 async function checkAuthState() {
@@ -453,21 +487,321 @@ async function loadRecentLessons() {
 }
 
 // Subject and Lesson Functions
-function openSubject(subjectName) {
-    showAlert(`Opening ${subjectName} lessons... (Feature coming soon!)`, 'info');
-    // TODO: Navigate to subject-specific lesson page
-    // window.location.href = `lessons/${subjectName}.html`;
+async function openSubject(subjectName) {
+    if (!currentUser) {
+        showAlert('Please sign in to access lessons', 'error');
+        return;
+    }
+    
+    try {
+        showAlert(`Loading ${subjectName} lessons...`, 'info');
+        await showLessonsForSubject(subjectName);
+    } catch (error) {
+        console.error('Error opening subject:', error);
+        showAlert('Error loading lessons. Please try again.', 'error');
+    }
 }
 
-function exploreSubject(subjectName) {
-    showAlert(`Exploring ${subjectName} lessons... Sign up to track your progress!`, 'info');
-    // TODO: Show preview of lessons for this subject
+async function exploreSubject(subjectName) {
+    try {
+        showAlert(`Exploring ${subjectName} lessons...`, 'info');
+        await showLessonsForSubject(subjectName, true);
+    } catch (error) {
+        console.error('Error exploring subject:', error);
+        showAlert('Error loading lessons. Please try again.', 'error');
+    }
 }
 
-function continueLesson(lessonId) {
-    showAlert('Opening lesson... (Feature coming soon!)', 'info');
-    // TODO: Navigate to specific lesson
-    // window.location.href = `lessons/lesson.html?id=${lessonId}`;
+async function continueLesson(lessonId) {
+    if (!currentUser) {
+        showAlert('Please sign in to continue lessons', 'error');
+        return;
+    }
+    
+    try {
+        showAlert('Loading lesson...', 'info');
+        await startLesson(lessonId);
+    } catch (error) {
+        console.error('Error continuing lesson:', error);
+        showAlert('Error loading lesson. Please try again.', 'error');
+    }
+}
+
+async function showLessonsForSubject(subjectName, isGuest = false) {
+    if (!supabase) return;
+    
+    try {
+        // Get lessons for this subject
+        const { data: lessons, error } = await supabase
+            .from('lessons')
+            .select('*')
+            .eq('subject', subjectName)
+            .eq('is_active', true)
+            .order('difficulty_level')
+            .order('title');
+            
+        if (error) throw error;
+        
+        if (!lessons || lessons.length === 0) {
+            showAlert(`No ${subjectName} lessons available yet.`, 'info');
+            return;
+        }
+        
+        // Show lessons modal or navigate to lessons page
+        showLessonsModal(lessons, subjectName, isGuest);
+        
+    } catch (error) {
+        console.error('Error loading lessons for subject:', error);
+        throw error;
+    }
+}
+
+function showLessonsModal(lessons, subjectName, isGuest = false) {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="lessons-modal" class="modal-overlay" onclick="closeLessonsModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>${subjectName.charAt(0).toUpperCase() + subjectName.slice(1)} Lessons</h3>
+                    <button onclick="closeLessonsModal()" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="lessons-grid">
+                        ${lessons.map(lesson => `
+                            <div class="lesson-card" onclick="${isGuest ? 'showGuestLessonPreview' : 'startLesson'}('${lesson.id}')">
+                                <div class="lesson-header">
+                                    <h4>${lesson.title}</h4>
+                                    <span class="difficulty-badge level-${lesson.difficulty_level}">
+                                        Level ${lesson.difficulty_level}
+                                    </span>
+                                </div>
+                                <p class="lesson-description">${lesson.description}</p>
+                                <div class="lesson-meta">
+                                    <span class="lesson-topic">${lesson.topic}</span>
+                                    <span class="lesson-duration">${lesson.estimated_duration || 15} min</span>
+                                </div>
+                                <div class="lesson-action">
+                                    ${isGuest ? 'Preview Lesson' : 'Start Lesson'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${isGuest ? '<p class="guest-notice">Sign up to track your progress and unlock all features!</p>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal styles
+    addModalStyles();
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function addModalStyles() {
+    if (document.getElementById('modal-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'modal-styles';
+    style.textContent = `
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #1f2937;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: #6b7280;
+        }
+        
+        .close-btn:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .lessons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .lesson-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .lesson-card:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+        
+        .lesson-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .lesson-header h4 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        
+        .difficulty-badge {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .level-1 { background: #dcfce7; color: #166534; }
+        .level-2 { background: #fef3c7; color: #92400e; }
+        .level-3 { background: #fecaca; color: #991b1b; }
+        
+        .lesson-description {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+        
+        .lesson-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 12px;
+        }
+        
+        .lesson-action {
+            background: #4f46e5;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .guest-notice {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            margin-top: 20px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+    `;
+    
+    document.head.appendChild(style);
+}
+
+function closeLessonsModal() {
+    const modal = document.getElementById('lessons-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function startLesson(lessonId) {
+    if (!currentUser) {
+        showAlert('Please sign in to start lessons', 'error');
+        return;
+    }
+    
+    try {
+        if (!window.lessonManager) {
+            showAlert('Lesson system not initialized. Please refresh the page.', 'error');
+            return;
+        }
+        
+        // Close any open modals
+        closeLessonsModal();
+        
+        // Start the lesson
+        const lessonData = await window.lessonManager.startLesson(lessonId, currentUser.id);
+        
+        // Show lesson interface
+        showLessonInterface(lessonData);
+        
+    } catch (error) {
+        console.error('Error starting lesson:', error);
+        showAlert('Error starting lesson. Please try again.', 'error');
+    }
+}
+
+function showGuestLessonPreview(lessonId) {
+    showAlert('Sign up to start lessons and track your progress!', 'info');
+    setTimeout(() => {
+        closeLessonsModal();
+        showAuth();
+    }, 2000);
+}
+
+function showLessonInterface(lessonData) {
+    // This would open a full lesson interface
+    // For now, just show a success message
+    showAlert(`Lesson started: ${lessonData.totalQuestions} questions to complete!`, 'success');
+    console.log('Lesson data:', lessonData);
+    
+    // TODO: Implement full lesson interface
+    // For now, redirect back to dashboard after a moment
+    setTimeout(() => {
+        showAlert('Lesson interface coming soon! Check your progress on the dashboard.', 'info');
+    }, 3000);
 }
 
 // Utility Functions
@@ -495,6 +829,66 @@ function showAlert(message, type = 'info') {
 
 function showPrivacyPolicy() {
     showAlert('Privacy policy: We respect your privacy and never sell your data. All learning progress is stored securely.', 'info');
+}
+
+// Admin functions
+async function loadSampleData() {
+    if (!window.setupSampleData) {
+        showAlert('Sample data system not loaded. Please refresh the page.', 'error');
+        return;
+    }
+    
+    try {
+        showAlert('Loading sample lessons and achievements...', 'info');
+        const success = await window.setupSampleData();
+        
+        if (success) {
+            showAlert('Sample data loaded successfully! Refresh the page to see lessons.', 'success');
+            // Reload subjects and dashboard
+            setTimeout(async () => {
+                await loadSubjects();
+                if (currentUser) {
+                    await updateDashboard();
+                }
+            }, 1000);
+        } else {
+            showAlert('Failed to load some sample data. Check console for details.', 'warning');
+        }
+    } catch (error) {
+        console.error('Error loading sample data:', error);
+        showAlert('Error loading sample data. Please try again.', 'error');
+    }
+}
+
+async function checkDatabase() {
+    if (!supabase) {
+        showAlert('Database not connected', 'error');
+        return;
+    }
+    
+    try {
+        const [subjectsResult, lessonsResult, achievementsResult] = await Promise.all([
+            supabase.from('subjects').select('*', { count: 'exact', head: true }),
+            supabase.from('lessons').select('*', { count: 'exact', head: true }),
+            supabase.from('achievements').select('*', { count: 'exact', head: true })
+        ]);
+        
+        const message = `Database Status:
+        • Subjects: ${subjectsResult.count || 0}
+        • Lessons: ${lessonsResult.count || 0}  
+        • Achievements: ${achievementsResult.count || 0}`;
+        
+        showAlert(message, 'info');
+        console.log('Database counts:', {
+            subjects: subjectsResult.count,
+            lessons: lessonsResult.count,
+            achievements: achievementsResult.count
+        });
+        
+    } catch (error) {
+        console.error('Error checking database:', error);
+        showAlert('Error checking database. Please try again.', 'error');
+    }
 }
 
 // Analytics Functions (for future use)
