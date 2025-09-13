@@ -169,7 +169,7 @@ class MathLesson {
         
         // Calculate final score percentage
         const maxScore = this.questions.reduce((sum, q) => sum + (q.points || 10), 0);
-        const scorePercentage = Math.round((this.score / maxScore) * 100);
+        const scorePercentage = maxScore > 0 ? Math.round((this.score / maxScore) * 100) : 0;
         
         // Save final progress to database
         await this.updateProgress('completed', scorePercentage);
@@ -185,7 +185,10 @@ class MathLesson {
             );
         }
         
-        console.log(`🎉 Lesson completed: ${this.title} - Score: ${scorePercentage}%`);
+        console.log(`🎉 Lesson completed: ${this.title}`);
+        console.log(`📊 Score: ${this.score}/${maxScore} points (${scorePercentage}%)`);
+        console.log(`⏱️ Time: ${this.totalTimeSpent} seconds`);
+        console.log(`✅ Correct: ${this.correctAnswers}/${this.questions.length}`);
         
         return {
             lessonId: this.id,
@@ -211,8 +214,6 @@ class MathLesson {
                 status: status,
                 score: score,
                 time_spent: status === 'completed' ? this.totalTimeSpent : Math.floor((Date.now() - this.startTime) / 1000),
-                questions_completed: this.currentQuestionIndex + (status === 'completed' ? 1 : 0),
-                total_questions: this.questions.length,
                 updated_at: new Date().toISOString()
             };
             
@@ -313,10 +314,11 @@ class MathLesson {
     }
     
     static async getUserLessons(userId, subject = null, status = null) {
-        if (!window.supabase || !userId) return [];
+        const supabase = window.supabaseClient;
+        if (!supabase || !userId) return [];
         
         try {
-            let query = window.supabase
+            let query = supabase
                 .from('user_progress')
                 .select(`
                     *,
@@ -361,10 +363,11 @@ class LessonManager {
     }
     
     async loadAvailableLessons(subject = null, userLevel = 1) {
-        if (!window.supabase) return [];
+        const supabase = window.supabaseClient;
+        if (!supabase) return [];
         
         try {
-            let query = window.supabase
+            let query = supabase
                 .from('lessons')
                 .select('id, title, description, subject, topic, difficulty_level, estimated_duration, required_level')
                 .eq('is_active', true)

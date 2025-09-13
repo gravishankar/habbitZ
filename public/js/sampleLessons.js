@@ -263,7 +263,8 @@ const sampleMathLessons = [
 
 // Function to insert sample lessons into Supabase
 async function insertSampleLessons() {
-    if (!window.supabase) {
+    const supabase = window.supabaseClient;
+    if (!supabase) {
         console.error('Supabase not available');
         return false;
     }
@@ -272,7 +273,7 @@ async function insertSampleLessons() {
         console.log('📚 Inserting sample lessons...');
         
         // First get the math subject ID
-        const { data: mathSubject, error: subjectError } = await window.supabase
+        const { data: mathSubject, error: subjectError } = await supabase
             .from('subjects')
             .select('id')
             .eq('name', 'math')
