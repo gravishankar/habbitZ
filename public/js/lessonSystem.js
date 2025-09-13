@@ -14,6 +14,13 @@ class MathLesson {
         this.estimatedDuration = lessonData.estimated_duration || 15;
         this.requiredLevel = lessonData.required_level || 1;
         
+        console.log('🔧 Lesson constructor:', {
+            id: this.id,
+            title: this.title,
+            questionsCount: this.questions.length,
+            questions: this.questions
+        });
+        
         // Lesson state
         this.startTime = null;
         this.currentQuestionIndex = 0;
@@ -223,7 +230,7 @@ class MathLesson {
             
             const { error } = await supabase
                 .from('user_progress')
-                .upsert([progressData]);
+                .upsert([progressData], { onConflict: 'user_id,lesson_id' });
                 
             if (error) throw error;
             
@@ -295,9 +302,13 @@ class MathLesson {
                 .eq('lesson_id', lessonId)
                 .order('question_order');
                 
-            if (questionsError) throw questionsError;
+            if (questionsError) {
+                console.error('❌ Questions error:', questionsError);
+                throw questionsError;
+            }
             
             console.log('✅ Questions loaded:', questionsData?.length || 0);
+            console.log('📝 Questions data:', questionsData);
             
             // Combine lesson and questions
             const lesson = {

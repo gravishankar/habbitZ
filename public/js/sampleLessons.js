@@ -286,7 +286,7 @@ async function insertSampleLessons() {
         
         for (const lesson of sampleMathLessons) {
             // Insert lesson with proper subject_id reference
-            const { data: lessonData, error: lessonError } = await window.supabase
+            const { data: lessonData, error: lessonError } = await supabase
                 .from('lessons')
                 .upsert([{
                     id: lesson.id,
@@ -320,7 +320,7 @@ async function insertSampleLessons() {
                 hint: q.hint
             }));
             
-            const { error: questionsError } = await window.supabase
+            const { error: questionsError } = await supabase
                 .from('lesson_questions')
                 .upsert(questions);
             
@@ -433,7 +433,8 @@ const sampleAchievements = [
 ];
 
 async function insertSampleAchievements() {
-    if (!window.supabase) {
+    const supabase = window.supabaseClient;
+    if (!supabase) {
         console.error('Supabase not available');
         return false;
     }
@@ -441,7 +442,7 @@ async function insertSampleAchievements() {
     try {
         console.log('🏆 Inserting sample achievements...');
         
-        const { error } = await window.supabase
+        const { error } = await supabase
             .from('achievements')
             .upsert(sampleAchievements);
         
@@ -496,7 +497,8 @@ const sampleSubjects = [
 ];
 
 async function insertSampleSubjects() {
-    if (!window.supabase) {
+    const supabase = window.supabaseClient;
+    if (!supabase) {
         console.error('Supabase not available');
         return false;
     }
@@ -504,7 +506,7 @@ async function insertSampleSubjects() {
     try {
         console.log('📖 Inserting sample subjects...');
         
-        const { error } = await window.supabase
+        const { error } = await supabase
             .from('subjects')
             .upsert(sampleSubjects);
         
