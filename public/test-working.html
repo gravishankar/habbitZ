@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Working Supabase Test</title>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="status">Loading...</div>
+    <button onclick="testConnection()">Test Again</button>
+    
+    <script>
+        // Load Supabase dynamically
+        function loadSupabase() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@supabase/supabase-js@2.38.0/dist/umd/supabase.min.js';
+                script.onload = () => {
+                    console.log('Supabase library loaded');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('Failed to load Supabase');
+                    reject(new Error('Failed to load Supabase library'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        async function testConnection() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Loading Supabase library...';
+            
+            try {
+                // Load library
+                await loadSupabase();
+                status.innerHTML = '✅ Supabase library loaded<br>';
+                
+                // Test client creation
+                const supabase = window.supabase.createClient(
+                    'https://wpkemkvgsbmudzgjrdqd.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwa2Vta3Znc2JtdWR6Z2pyZHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MDAzOTMsImV4cCI6MjA3MzI3NjM5M30.LCDGRUL7AMCuoxTwrI8SbKu8wwFNLXb_kfm7mwdzYHQ'
+                );
+                status.innerHTML += '✅ Supabase client created<br>';
+                
+                // Test database connection
+                const { data, error } = await supabase.from('subjects').select('count').limit(1);
+                
+                if (error) {
+                    status.innerHTML += '❌ Database error: ' + error.message;
+                } else {
+                    status.innerHTML += '✅ Database connection works!<br>';
+                    status.innerHTML += '<strong>🎉 Everything is working!</strong>';
+                }
+                
+            } catch (error) {
+                status.innerHTML = '❌ Error: ' + error.message;
+                console.error('Test failed:', error);
+            }
+        }
+        
+        // Test on page load
+        window.onload = testConnection;
+    </script>
+</body>
+</html>

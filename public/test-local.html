@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Local Supabase Test</title>
+</head>
+<body>
+    <h1>Testing Local Supabase</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+    
+    <!-- Use local Supabase file -->
+    <script src="js/supabase.min.js"></script>
+    
+    <script>
+        function testConnection() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                // Check if supabase is available
+                if (!window.supabase) {
+                    result.innerHTML = '❌ Supabase not loaded';
+                    return;
+                }
+                
+                result.innerHTML = '✅ Supabase library loaded<br>';
+                
+                // Create client
+                const client = window.supabase.createClient(
+                    'https://wpkemkvgsbmudzgjrdqd.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwa2Vta3Znc2JtdWR6Z2pyZHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MDAzOTMsImV4cCI6MjA3MzI3NjM5M30.LCDGRUL7AMCuoxTwrI8SbKu8wwFNLXb_kfm7mwdzYHQ'
+                );
+                
+                result.innerHTML += '✅ Supabase client created<br>';
+                
+                // Test simple query
+                client.from('subjects').select('*').limit(1).then(response => {
+                    if (response.error) {
+                        result.innerHTML += '❌ Database error: ' + response.error.message;
+                    } else {
+                        result.innerHTML += '✅ Database connection works!<br>';
+                        result.innerHTML += '<strong>🎉 Ready to build!</strong>';
+                    }
+                }).catch(error => {
+                    result.innerHTML += '❌ Query failed: ' + error.message;
+                });
+                
+            } catch (error) {
+                result.innerHTML = '❌ Error: ' + error.message;
+                console.error('Test failed:', error);
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = testConnection;
+    </script>
+</body>
+</html>

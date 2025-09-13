@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>habbitZ - Working Version</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .tagline {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #5a6fd8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .hidden {
+            display: none;
+        }
+        .dashboard {
+            text-align: left;
+        }
+        .user-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎯 habbitZ</div>
+        <div class="tagline">Building Learning Habits, One Lesson at a Time</div>
+        
+        <div id="alert-container"></div>
+        
+        <!-- Auth Section -->
+        <div id="auth-section">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('signin')">Sign In</button>
+                <button class="tab-btn" onclick="showTab('signup')">Sign Up</button>
+            </div>
+            
+            <!-- Sign In Form -->
+            <div id="signin-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="signin-email">Email</label>
+                    <input type="email" id="signin-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="signin-password">Password</label>
+                    <input type="password" id="signin-password" placeholder="Enter your password">
+                </div>
+                <button class="btn" onclick="signIn()">Sign In</button>
+            </div>
+            
+            <!-- Sign Up Form -->
+            <div id="signup-tab" class="tab-content">
+                <div class="form-group">
+                    <label for="signup-name">Name</label>
+                    <input type="text" id="signup-name" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" placeholder="Create password (min 6 chars)">
+                </div>
+                <button class="btn" onclick="signUp()">Create Account</button>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="testDatabase()">Test Database</button>
+        </div>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="hidden">
+            <div class="user-info">
+                <h3>Welcome back!</h3>
+                <p id="user-email"></p>
+                <button class="btn" onclick="signOut()">Sign Out</button>
+            </div>
+            <div class="dashboard">
+                <h4>Your Learning Journey</h4>
+                <p>🎯 Ready to start learning!</p>
+                <p>📚 Choose from Math, Science, Language Arts, and more</p>
+                <p>🏆 Track progress and earn achievements</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://wpkemkvgsbmudzgjrdqd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwa2Vta3Znc2JtdWR6Z2pyZHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MDAzOTMsImV4cCI6MjA3MzI3NjM5M30.LCDGRUL7AMCuoxTwrI8SbKu8wwFNLXb_kfm7mwdzYHQ';
+        
+        let currentUser = null;
+        
+        // Helper function for API calls
+        async function supabaseRequest(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            };
+            
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}${endpoint}`, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                throw error;
+            }
+        }
+        
+        // Authentication functions
+        async function signUp() {
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            
+            if (!name || !email || !password) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            try {
+                const result = await supabaseRequest('/auth/v1/signup', 'POST', {
+                    email,
+                    password,
+                    data: { display_name: name }
+                });
+                
+                showAlert(`Welcome ${name}! Check your email to verify your account.`, 'success');
+                clearSignupForm();
+                
+            } catch (error) {
+                console.error('Sign up error:', error);
+                showAlert(`Sign up failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function signIn() {
+            const email = document.getElementById('signin-email').value.trim();
+            const password = document.getElementById('signin-password').value;
+            
+            if (!email || !password) {
+                showAlert('Please enter both email and password', 'error');
+                return;
+            }
+            
+            try {
+                const result = await supabaseRequest('/auth/v1/token?grant_type=password', 'POST', {
+                    email,
+                    password
+                });
+                
+                if (result.access_token && result.user) {
+                    currentUser = result.user;
+                    showAlert('Welcome back!', 'success');
+                    showDashboard();
+                    clearSigninForm();
+                } else {
+                    showAlert('Invalid email or password', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Sign in error:', error);
+                showAlert('Sign in failed. Please check your credentials.', 'error');
+            }
+        }
+        
+        async function signOut() {
+            currentUser = null;
+            showAuth();
+            showAlert('Signed out successfully', 'success');
+        }
+        
+        async function testDatabase() {
+            try {
+                showAlert('Testing database connection...', 'info');
+                
+                const result = await supabaseRequest('/rest/v1/subjects?select=count&limit=1');
+                
+                showAlert('✅ Database connection successful!', 'success');
+                console.log('Database test result:', result);
+                
+            } catch (error) {
+                console.error('Database test failed:', error);
+                showAlert(`Database test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // UI Functions
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+        
+        function showDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('user-email').textContent = currentUser.email;
+            }
+        }
+        
+        function showAuth() {
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+        }
+        
+        function clearSignupForm() {
+            document.getElementById('signup-name').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+        }
+        
+        function clearSigninForm() {
+            document.getElementById('signin-email').value = '';
+            document.getElementById('signin-password').value = '';
+        }
+        
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+            
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        // Initialize app
+        window.addEventListener('load', () => {
+            console.log('🎯 habbitZ loaded successfully!');
+            showAlert('Welcome to habbitZ! Ready to start learning.', 'info');
+        });
+    </script>
+</body>
+</html>

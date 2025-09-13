@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/2.38.0/supabase.min.js"></script>
+</head>
+<body>
+    <h1>Testing Supabase</h1>
+    <button onclick="testSupabase()">Test Connection</button>
+    <div id="result"></div>
+    
+    <script>
+        function testSupabase() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            console.log('Window.supabase:', window.supabase);
+            
+            if (!window.supabase) {
+                result.innerHTML = '❌ Supabase library not loaded';
+                return;
+            }
+            
+            try {
+                const client = window.supabase.createClient(
+                    'https://wpkemkvgsbmudzgjrdqd.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwa2Vta3Znc2JtdWR6Z2pyZHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MDAzOTMsImV4cCI6MjA3MzI3NjM5M30.LCDGRUL7AMCuoxTwrI8SbKu8wwFNLXb_kfm7mwdzYHQ'
+                );
+                
+                result.innerHTML = '✅ Supabase client created successfully!';
+                console.log('Supabase client:', client);
+                
+            } catch (error) {
+                result.innerHTML = '❌ Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+        
+        // Test immediately when page loads
+        window.onload = testSupabase;
+    </script>
+</body>
+</html>

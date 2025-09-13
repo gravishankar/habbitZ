@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>habbitZ - Building Learning Habits</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/2.38.0/supabase.min.js"></!--script-->
+    <script src="js/supabase.min.js"></script>
+    <meta name="description" content="Personalized learning platform for Math, Science, Language Arts and more. Track progress, earn achievements, build learning habits.">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎯</span>
+                <span class="logo-text">habbitZ</span>
+            </div>
+            <div class="tagline">Building Learning Habits, One Lesson at a Time</div>
+        </header>
+        
+        <div id="alert-container" class="alert-container"></div>
+        
+        <!-- Authentication Section -->
+        <div id="auth-section" class="auth-section">
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="showTab('signin')">Sign In</button>
+                <button class="tab-btn" onclick="showTab('signup')">Sign Up</button>
+            </div>
+            
+            <!-- Sign In Form -->
+            <div id="signin-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="signin-email">Email</label>
+                    <input type="email" id="signin-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signin-password">Password</label>
+                    <input type="password" id="signin-password" placeholder="Enter your password" required>
+                </div>
+                <button class="btn btn-primary" onclick="signIn()">Sign In</button>
+                <button class="btn-link" onclick="resetPassword()">Forgot Password?</button>
+            </div>
+
+            <!-- Sign Up Form -->
+            <div id="signup-form" class="auth-form">
+                <div class="form-group">
+                    <label for="signup-name">Display Name</label>
+                    <input type="text" id="signup-name" placeholder="Your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" placeholder="Create a password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Learning Interests</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="math" checked> Mathematics
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="science"> Science
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="language"> Language Arts
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="history"> History
+                        </label>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="signUp()">Create Account</button>
+            </div>
+            
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+            
+            <button class="btn btn-github" onclick="signInWithGitHub()">
+                <span>📱</span> Sign in with GitHub
+            </button>
+            
+            <div class="guest-section">
+                <p>Want to explore first?</p>
+                <button class="btn btn-secondary" onclick="exploreAsGuest()">Browse Lessons</button>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="dashboard-section hidden">
+            <div class="user-header">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div>
+                        <h3 id="user-name">Welcome back!</h3>
+                        <p id="user-email" class="user-email"></p>
+                    </div>
+                </div>
+                <button class="btn btn-outline" onclick="signOut()">Sign Out</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value" id="lessons-completed">0</div>
+                    <div class="stat-label">Lessons Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-value" id="current-streak">0</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="total-points">0</div>
+                    <div class="stat-label">Points Earned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="achievements-count">0</div>
+                    <div class="stat-label">Achievements</div>
+                </div>
+            </div>
+            
+            <div class="subjects-section">
+                <h3>Choose Your Subject</h3>
+                <div class="subjects-grid" id="subjects-grid">
+                    <!-- Subjects will be loaded dynamically -->
+                </div>
+            </div>
+            
+            <div class="recent-lessons">
+                <h3>Continue Learning</h3>
+                <div id="recent-lessons-list" class="lessons-list">
+                    <!-- Recent lessons will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Lesson Browser (for guests) -->
+        <div id="lesson-browser" class="lesson-browser hidden">
+            <div class="browser-header">
+                <h2>Explore Our Lessons</h2>
+                <button class="btn btn-primary" onclick="showAuth()">Sign Up to Track Progress</button>
+            </div>
+            <div id="browse-subjects" class="subjects-grid">
+                <!-- Subjects for browsing -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2025 habbitZ. Building learning habits that last.</p>
+        <div class="footer-links">
+            <a href="https://sites.google.com/view/habbitZ" target="_blank">About</a>
+            <a href="#" onclick="showPrivacyPolicy()">Privacy</a>
+            <a href="https://github.com/gravishankar" target="_blank">GitHub</a>
+        </div>
+    </footer>
+
+    <script src="../src/utils/contentProtection.js"></script>
+    <script src="../src/utils/analytics.js"></script>
+    <script src="../src/lessons/lessonSystem.js"></script>
+    <script src="../src/components/progressDashboard.js"></script>
+    <script src="../src/components/achievementSystem.js"></script>
+    <script src="../src/lessons/sampleLessons.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
