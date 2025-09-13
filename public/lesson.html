@@ -385,7 +385,8 @@
             // Reset UI state
             selectedAnswer = null;
             document.getElementById('submit-btn').disabled = true;
-            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('submit-btn').style.display = 'inline-block'; // Show submit button
+            document.getElementById('next-btn').style.display = 'none'; // Hide next button
             document.getElementById('feedback-container').style.display = 'none';
             document.getElementById('hint-container').style.display = 'none';
         }
@@ -393,6 +394,11 @@
         function showAnswerOptions() {
             const container = document.getElementById('answer-options');
             container.innerHTML = '';
+            
+            // Clear any previous answer styling
+            document.querySelectorAll('.answer-option').forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+            });
             
             if (currentQuestion.type === 'multiple_choice' && currentQuestion.options) {
                 currentQuestion.options.forEach((option, index) => {
