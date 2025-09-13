@@ -531,19 +531,38 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
     if (!supabase) return;
     
     try {
-        // Get lessons for this subject using proper schema
-        const { data: lessons, error } = await supabase
+        console.log('🔍 Searching for lessons with subject:', subjectName);
+        
+        // First, let's check if subjects exist and get the subject ID
+        const { data: subject, error: subjectError } = await supabase
+            .from('subjects')
+            .select('*')
+            .eq('name', subjectName)
+            .single();
+            
+        if (subjectError) {
+            console.error('Subject error:', subjectError);
+            showAlert(`Subject "${subjectName}" not found. Try clicking "Load Sample Lessons" first.`, 'error');
+            return;
+        }
+        
+        console.log('✅ Found subject:', subject);
+        
+        // Now get lessons for this subject
+        const { data: lessons, error: lessonsError } = await supabase
             .from('lessons')
-            .select(`
-                *,
-                subjects!inner(name, display_name)
-            `)
-            .eq('subjects.name', subjectName)
+            .select('*')
+            .eq('subject_id', subject.id)
             .eq('is_active', true)
             .order('difficulty_level')
             .order('title');
             
-        if (error) throw error;
+        if (lessonsError) {
+            console.error('Lessons error:', lessonsError);
+            throw lessonsError;
+        }
+        
+        console.log('📚 Found lessons:', lessons);
         
         if (!lessons || lessons.length === 0) {
             showAlert(`No ${subjectName} lessons available yet. Try clicking "Load Sample Lessons" first.`, 'info');
@@ -555,8 +574,7 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
         
     } catch (error) {
         console.error('Error loading lessons for subject:', error);
-        showAlert(`Database error: ${error.message}. Make sure you've run the database schema setup.`, 'error');
-        throw error;
+        showAlert(`Database error: ${error.message}. Check console for details.`, 'error');
     }
 }
 
@@ -822,18 +840,28 @@ async function loadSampleData() {
     }
     
     try {
+        console.log('🔧 Starting sample data loading...');
         showAlert('Loading sample lessons and achievements...', 'info');
+        
         const success = await window.setupSampleData();
         
         if (success) {
-            showAlert('Sample data loaded successfully! Refresh the page to see lessons.', 'success');
-            // Reload subjects and dashboard
+            showAlert('Sample data loaded successfully! Try clicking on subjects now.', 'success');
+            
+            // Reload subjects and dashboard immediately
+            console.log('🔄 Reloading subjects...');
+            await loadSubjects();
+            
+            if (currentUser) {
+                console.log('🔄 Updating dashboard...');
+                await updateDashboard();
+            }
+            
+            // Also manually check what got loaded
             setTimeout(async () => {
-                await loadSubjects();
-                if (currentUser) {
-                    await updateDashboard();
-                }
-            }, 1000);
+                await checkDatabase();
+            }, 2000);
+            
         } else {
             showAlert('Failed to load some sample data. Check console for details.', 'warning');
         }
