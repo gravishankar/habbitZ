@@ -9,6 +9,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 let supabase;
 try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Make supabase client globally available for other modules
+    window.supabaseClient = supabase;
     console.log('✅ Supabase initialized successfully');
 } catch (error) {
     console.error('❌ Supabase initialization error:', error);

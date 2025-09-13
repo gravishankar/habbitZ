@@ -306,6 +306,9 @@
         document.addEventListener('DOMContentLoaded', async () => {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
+            // Make supabase client globally available for other modules
+            window.supabaseClient = supabase;
+            
             // Check authentication
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {

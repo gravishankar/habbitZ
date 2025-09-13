@@ -200,7 +200,9 @@ class MathLesson {
     }
     
     async updateProgress(status, score = 0) {
-        if (!window.supabase || !this.userId) return;
+        // Get the supabase client from the global scope
+        const supabase = window.supabaseClient;
+        if (!supabase || !this.userId) return;
         
         try {
             const progressData = {
@@ -218,7 +220,7 @@ class MathLesson {
                 progressData.completed_at = new Date().toISOString();
             }
             
-            const { error } = await window.supabase
+            const { error } = await supabase
                 .from('user_progress')
                 .upsert([progressData]);
                 
@@ -260,13 +262,17 @@ class MathLesson {
     }
     
     static async loadLesson(lessonId) {
-        if (!window.supabase) {
+        // Get the supabase client from the global scope
+        const supabase = window.supabaseClient;
+        if (!supabase) {
             throw new Error('Database connection required');
         }
         
         try {
+            console.log('📚 Loading lesson:', lessonId);
+            
             // Load lesson data
-            const { data: lessonData, error: lessonError } = await window.supabase
+            const { data: lessonData, error: lessonError } = await supabase
                 .from('lessons')
                 .select('*')
                 .eq('id', lessonId)
@@ -279,14 +285,18 @@ class MathLesson {
                 throw new Error('Lesson not found');
             }
             
+            console.log('✅ Lesson data loaded:', lessonData);
+            
             // Load questions separately
-            const { data: questionsData, error: questionsError } = await window.supabase
+            const { data: questionsData, error: questionsError } = await supabase
                 .from('lesson_questions')
                 .select('*')
                 .eq('lesson_id', lessonId)
                 .order('question_order');
                 
             if (questionsError) throw questionsError;
+            
+            console.log('✅ Questions loaded:', questionsData?.length || 0);
             
             // Combine lesson and questions
             const lesson = {
