@@ -347,91 +347,27 @@ async function insertSampleLessons() {
 // Function to create sample achievements
 const sampleAchievements = [
     {
-        id: "first_lesson",
         name: "Getting Started",
         description: "Complete your first lesson",
         badge_icon: "🌟",
         points_reward: 50,
-        category: "progress",
-        rarity: "common",
         unlock_condition: JSON.stringify({ type: "lessons_completed", target: 1 }),
         is_active: true
     },
     {
-        id: "five_lessons",
-        name: "Learning Momentum",
+        name: "Learning Momentum", 
         description: "Complete 5 lessons",
         badge_icon: "🚀",
         points_reward: 100,
-        category: "progress",
-        rarity: "common",
         unlock_condition: JSON.stringify({ type: "lessons_completed", target: 5 }),
         is_active: true
     },
     {
-        id: "ten_lessons",
-        name: "Dedicated Learner",
-        description: "Complete 10 lessons",
-        badge_icon: "📚",
-        points_reward: 200,
-        category: "progress",
-        rarity: "uncommon",
-        unlock_condition: JSON.stringify({ type: "lessons_completed", target: 10 }),
-        is_active: true
-    },
-    {
-        id: "first_perfect",
         name: "Perfect Score",
-        description: "Get 100% on a lesson",
+        description: "Get 100% on a lesson", 
         badge_icon: "💯",
         points_reward: 75,
-        category: "performance",
-        rarity: "uncommon",
         unlock_condition: JSON.stringify({ type: "perfect_scores", target: 1 }),
-        is_active: true
-    },
-    {
-        id: "week_streak",
-        name: "Week Warrior",
-        description: "Learn for 7 days in a row",
-        badge_icon: "🔥",
-        points_reward: 150,
-        category: "consistency",
-        rarity: "rare",
-        unlock_condition: JSON.stringify({ type: "streak_days", target: 7 }),
-        is_active: true
-    },
-    {
-        id: "hundred_points",
-        name: "Point Collector",
-        description: "Earn 1000 total points",
-        badge_icon: "💎",
-        points_reward: 100,
-        category: "progress",
-        rarity: "uncommon",
-        unlock_condition: JSON.stringify({ type: "points_earned", target: 1000 }),
-        is_active: true
-    },
-    {
-        id: "math_master",
-        name: "Math Master",
-        description: "Complete 20 math lessons",
-        badge_icon: "🔢",
-        points_reward: 300,
-        category: "subject",
-        rarity: "rare",
-        unlock_condition: JSON.stringify({ type: "subject_lessons", target: 20, subject: "math" }),
-        is_active: true
-    },
-    {
-        id: "speed_demon",
-        name: "Speed Demon",
-        description: "Complete a lesson in under 5 minutes",
-        badge_icon: "⚡",
-        points_reward: 100,
-        category: "performance",
-        rarity: "rare",
-        unlock_condition: JSON.stringify({ type: "fast_completion", target: 300 }),
         is_active: true
     }
 ];
@@ -467,35 +403,21 @@ async function insertSampleAchievements() {
 // Function to setup initial subjects
 const sampleSubjects = [
     {
-        id: "math",
         name: "math",
-        display_name: "Mathematics",
+        display_name: "Mathematics", 
         description: "Numbers, arithmetic, algebra, and problem solving",
-        icon: "🔢",
         is_active: true
     },
     {
-        id: "science",
-        name: "science", 
+        name: "science",
         display_name: "Science",
-        description: "Physics, chemistry, biology, and scientific thinking",
-        icon: "🔬",
+        description: "Physics, chemistry, biology, and scientific thinking", 
         is_active: true
     },
     {
-        id: "language",
         name: "language",
-        display_name: "Language Arts", 
+        display_name: "Language Arts",
         description: "Reading, writing, vocabulary, and communication",
-        icon: "📚",
-        is_active: true
-    },
-    {
-        id: "history",
-        name: "history",
-        display_name: "History",
-        description: "Past events, cultures, and historical thinking",
-        icon: "🏛️",
         is_active: true
     }
 ];
