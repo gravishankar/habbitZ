@@ -585,6 +585,7 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
     
     try {
         console.log('🔍 Searching for lessons with subject:', subjectName);
+        console.log('🕐 Current time:', new Date().toISOString());
         
         // First, let's check if subjects exist and get the subject ID
         const { data: subject, error: subjectError } = await supabase
@@ -607,6 +608,7 @@ async function showLessonsForSubject(subjectName, isGuest = false) {
             .select('*')
             .eq('subject_id', subject.id)
             .eq('is_active', true)
+            .order('created_at', { ascending: false }) // Get newest first
             .order('difficulty_level')
             .order('title');
             
@@ -899,20 +901,11 @@ async function loadSampleData() {
         const success = await window.setupSampleData();
         
         if (success) {
-            showAlert('Sample data loaded successfully! Try clicking on subjects now.', 'success');
+            showAlert('Sample data loaded successfully! The page will refresh to show new lessons.', 'success');
             
-            // Reload subjects and dashboard immediately
-            console.log('🔄 Reloading subjects...');
-            await loadSubjects();
-            
-            if (currentUser) {
-                console.log('🔄 Updating dashboard...');
-                await updateDashboard();
-            }
-            
-            // Also manually check what got loaded
-            setTimeout(async () => {
-                await checkDatabase();
+            // Reload the entire page to ensure everything is fresh
+            setTimeout(() => {
+                window.location.reload();
             }, 2000);
             
         } else {
