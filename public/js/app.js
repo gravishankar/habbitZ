@@ -58,32 +58,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Initialize all systems
 async function initializeSystems() {
-    if (!supabase) return;
+    console.log('🚀 Initializing habbitZ systems...');
+    
+    if (!supabase) {
+        console.error('❌ Cannot initialize - Supabase not available');
+        showAlert('Database connection failed. Please refresh the page.', 'error');
+        return;
+    }
     
     try {
-        // Check if sample data exists
-        const { data: subjectsCheck } = await supabase
+        console.log('🔍 Checking if sample data exists...');
+        
+        // Check if subjects table exists and has data
+        const { data: subjectsCheck, error: checkError } = await supabase
             .from('subjects')
             .select('id')
             .limit(1);
             
+        if (checkError) {
+            console.error('❌ Error checking subjects table:', checkError);
+            showAlert(`Database table error: ${checkError.message}. Please run the database schema setup.`, 'error');
+            return;
+        }
+        
+        console.log('📊 Subjects check result:', subjectsCheck);
+        
         if (!subjectsCheck || subjectsCheck.length === 0) {
-            console.log('📚 Loading sample data...');
-            showAlert('Setting up sample lessons...', 'info');
+            console.log('📚 No sample data found - will load automatically...');
+            showAlert('Setting up sample lessons automatically...', 'info');
             
             // Load sample data
             if (window.setupSampleData) {
+                console.log('🔧 Running setupSampleData...');
                 await window.setupSampleData();
+            } else {
+                console.error('❌ setupSampleData function not available');
+                showAlert('Sample data system not loaded. Please refresh the page.', 'error');
             }
+        } else {
+            console.log('✅ Sample data already exists');
         }
         
         // Initialize lesson manager
         if (window.initializeLessonManager) {
+            console.log('🎯 Initializing lesson manager...');
             window.lessonManager = window.initializeLessonManager();
+        } else {
+            console.warn('⚠️ Lesson manager not available');
         }
         
+        console.log('✅ System initialization complete');
+        
     } catch (error) {
-        console.error('Error initializing systems:', error);
+        console.error('❌ Error initializing systems:', error);
+        showAlert(`System initialization failed: ${error.message}`, 'error');
     }
 }
 
@@ -305,27 +333,50 @@ function exploreAsGuest() {
 
 // Data Loading Functions
 async function loadSubjects() {
-    if (!supabase) return;
+    if (!supabase) {
+        console.error('❌ Supabase not available for loading subjects');
+        return;
+    }
     
     try {
+        console.log('🔍 Attempting to load subjects from database...');
+        
         const { data, error } = await supabase
             .from('subjects')
             .select('*')
             .eq('is_active', true)
             .order('name');
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Database error loading subjects:', error);
+            showAlert(`Database error: ${error.message}. The subjects table may not exist.`, 'error');
+            throw error;
+        }
         
         subjects = data || [];
-        console.log('✅ Subjects loaded:', subjects.length);
+        console.log('✅ Subjects loaded from database:', subjects.length, subjects);
+        
+        if (subjects.length === 0) {
+            console.warn('⚠️ No subjects found in database - using fallback subjects');
+            showAlert('No subjects found in database. Click "Load Sample Lessons" to set up sample data.', 'warning');
+            
+            // Set fallback subjects for display only
+            subjects = [
+                { id: 'fallback-math', name: 'math', display_name: 'Mathematics', description: 'Click "Load Sample Lessons" to set up' },
+                { id: 'fallback-science', name: 'science', display_name: 'Science', description: 'Click "Load Sample Lessons" to set up' },
+                { id: 'fallback-language', name: 'language', display_name: 'Language Arts', description: 'Click "Load Sample Lessons" to set up' }
+            ];
+        }
         
     } catch (error) {
-        console.error('Error loading subjects:', error);
-        // Set default subjects if database query fails
+        console.error('❌ Error loading subjects:', error);
+        showAlert(`Failed to load subjects: ${error.message}. Check if database tables exist.`, 'error');
+        
+        // Set fallback subjects if database query fails completely
         subjects = [
-            { id: '1', name: 'math', display_name: 'Mathematics', description: 'Arithmetic, Algebra, Geometry' },
-            { id: '2', name: 'science', display_name: 'Science', description: 'Physics, Chemistry, Biology' },
-            { id: '3', name: 'language', display_name: 'Language Arts', description: 'Reading, Writing, Vocabulary' }
+            { id: 'error-math', name: 'math', display_name: 'Mathematics', description: 'Database connection issue' },
+            { id: 'error-science', name: 'science', display_name: 'Science', description: 'Database connection issue' },
+            { id: 'error-language', name: 'language', display_name: 'Language Arts', description: 'Database connection issue' }
         ];
     }
 }
